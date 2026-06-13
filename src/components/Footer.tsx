@@ -1,48 +1,63 @@
 import { Link } from 'react-router-dom'
-import { img } from '../utils/img'
+import { SITE } from '../data/site'
+import Logo from './Logo'
 
 export default function Footer() {
   return (
-    <footer>
-      <div className="footer-top">
-        <div>
-          <span className="footer-col-title">Explore</span>
-          <ul className="footer-links footer-links-grid">
-            <li><Link to="/cellar-54">Cellar 54</Link></li>
-            <li><Link to="/ground-floor">Ground Floor</Link></li>
-            <li><Link to="/womens-collective">Women's Collective</Link></li>
-            <li><Link to="/anthem">Anthem</Link></li>
-            <li><Link to="/#events">Events</Link></li>
-            <li><Link to="/faq">FAQ</Link></li>
-            <li><Link to="/leasing">Leasing</Link></li>
-            <li><Link to="/directory">Directory</Link></li>
-          </ul>
-        </div>
-        <div className="footer-center">
-          <Link to="/" className="forge-logo forge-logo--footer" aria-label="The Forge">
-            <img src={img('logo.webp')} alt="The Forge" style={{ height: '192px', width: 'auto', display: 'block' }} />
+    <footer className="site-footer">
+      <div className="footer-main">
+        <div className="footer-brand">
+          <Link to="/" className="brand">
+            <Logo className="brand-mark" />
+            <span className="brand-text">
+              <span className="brand-org" style={{ color: 'rgba(255,255,255,0.6)' }}>{SITE.org}</span>
+              <span className="brand-name">{SITE.name}</span>
+            </span>
           </Link>
-          <p className="footer-tagline">Salem's Lifestyle Collective</p>
-        </div>
-        <div className="footer-right">
-          <span className="footer-col-title">Connect</span>
-          <ul className="footer-links footer-links--connect" style={{ alignItems: 'flex-end' }}>
-            <li><a href="mailto:inquiries@forgesalem.com">inquiries@forgesalem.com</a></li>
-            <li><a href="https://forgesalem.com" target="_blank" rel="noopener">forgesalem.com</a></li>
-          </ul>
+          <p>{SITE.acres} acres of athletic fields, courts, and community on {SITE.address.line1} in {SITE.city}.</p>
           <div className="footer-social">
-            <a href="https://www.facebook.com/theforgesalem/" target="_blank" rel="noopener">Facebook</a>
-            <a href="https://www.instagram.com/theforgesalem/" target="_blank" rel="noopener">Instagram</a>
-            <a href="https://www.tiktok.com/@theforgesalem" target="_blank" rel="noopener">TikTok</a>
-            <a href="https://www.youtube.com/@TheForgeSalem" target="_blank" rel="noopener">YouTube</a>
-            <a href="https://www.linkedin.com/company/the-forge-salem" target="_blank" rel="noopener">LinkedIn</a>
-            <a href="https://www.instagram.com/clinksalem/" target="_blank" rel="noopener">Clink!</a>
+            <a href={SITE.social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">FB</a>
+            <a href={SITE.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">IG</a>
+            <a href={SITE.social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube">YT</a>
+            <a href={SITE.social.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">X</a>
           </div>
         </div>
+
+        <div className="footer-col">
+          <h4>Play</h4>
+          <ul>
+            <li><Link to="/adult-leagues">Adult Leagues</Link></li>
+            <li><Link to="/youth-sports">Youth Sports</Link></li>
+            <li><Link to="/tournaments">Tournaments</Link></li>
+            <li><Link to="/schedules">Game Schedules</Link></li>
+            <li><Link to="/calendar">Calendar</Link></li>
+          </ul>
+        </div>
+
+        <div className="footer-col">
+          <h4>Complex</h4>
+          <ul>
+            <li><Link to="/fields">Fields &amp; Rentals</Link></li>
+            <li><Link to="/about">About the Complex</Link></li>
+            <li><Link to="/about#impact">Economic Impact</Link></li>
+            <li><Link to="/contact">Contact Us</Link></li>
+          </ul>
+        </div>
+
+        <div className="footer-col">
+          <h4>Visit</h4>
+          <ul>
+            <li><a href={SITE.address.maps} target="_blank" rel="noopener noreferrer">{SITE.address.line1}</a></li>
+            <li>{SITE.address.line2}</li>
+            <li><a href={`tel:${SITE.phone.replace(/[^\d]/g, '')}`}>{SITE.phone}</a></li>
+            <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          </ul>
+        </div>
       </div>
+
       <div className="footer-bottom">
-        <span>© 2026 The Forge Salem. All rights reserved.</span>
-        <address style={{ fontStyle: 'normal' }}>285 Liberty St. N.E. · Salem, Oregon 97301</address>
+        <span>© {new Date().getFullYear()} {SITE.org}. All rights reserved.</span>
+        <span>{SITE.name} · {SITE.city}</span>
       </div>
     </footer>
   )

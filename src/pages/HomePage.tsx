@@ -1,556 +1,242 @@
-import { useState, useEffect, useRef, FormEvent } from 'react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import Layout from '../components/Layout'
+import NewsletterStrip from '../components/NewsletterStrip'
+import { SITE, FEATURE_CARDS, STATS, ADULT_LEAGUES, YOUTH_SPORTS, TOURNAMENTS, SPONSORS } from '../data/site'
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'behold-widget': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'feed-id': string }
-    }
-  }
-}
-import { Link, useNavigate } from 'react-router-dom'
-import Nav from '../components/Nav'
-import Footer from '../components/Footer'
-import { img } from '../utils/img'
-import { supabase } from '../lib/supabase'
-
-type SupabaseMessage = {
-  id: string
-  name: string
-  message: string
-  photo_url: string | null
-  submitted_at: string
-}
-
-
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
-
-const allEvents = [
-  { date: '2026-05-16', title: 'Grand Opening — Day 2', venue: 'The Forge', category: 'events', desc: 'Day two of The Forge Grand Opening celebration.' },
-  { date: '2026-05-30', title: 'Women\'s Boxing and Yoga', venue: 'The Forge', category: 'events', desc: 'Join us for a empowering session of boxing and yoga tailored for women.' },
+const SLIDES = [
+  {
+    bg: 'bg-grad-1',
+    badge: '177 Acres on Turner Road',
+    title: <>Salem’s home for <em>sports</em></>,
+    sub: 'Twelve championship diamonds, lighted turf fields, and an indoor fieldhouse — all in one place on Turner Road SE.',
+    actions: [
+      { label: 'Explore the Complex', to: '/fields', cls: 'btn--primary' },
+      { label: 'Game Schedules', to: '/schedules', cls: 'btn--ghost' },
+    ],
+  },
+  {
+    bg: 'bg-grad-2',
+    badge: 'Leagues for every age',
+    title: <>Play your <em>season</em></>,
+    sub: 'Adult and youth leagues year-round — baseball, softball, soccer, basketball, volleyball, and pickleball.',
+    actions: [
+      { label: 'Adult Leagues', to: '/adult-leagues', cls: 'btn--primary' },
+      { label: 'Youth Sports', to: '/youth-sports', cls: 'btn--ghost' },
+    ],
+  },
+  {
+    bg: 'bg-grad-3',
+    badge: '2026 Tournament Season',
+    title: <>Bring your <em>team</em> to Salem</>,
+    sub: 'Regional baseball, fastpitch, and volleyball tournaments draw teams and families from across the Northwest.',
+    actions: [
+      { label: 'View Tournaments', to: '/tournaments', cls: 'btn--primary' },
+      { label: 'Rent the Fields', to: '/fields#tournament', cls: 'btn--ghost' },
+    ],
+  },
 ]
 
 export default function HomePage() {
-  const navigate = useNavigate()
-
-  useEffect(() => { document.title = "The Forge — Salem's Lifestyle Collective" }, [])
+  const [active, setActive] = useState(0)
 
   useEffect(() => {
-    if (document.querySelector('script[src="https://w.behold.so/widget.js"]')) return
-    const s = document.createElement('script')
-    s.type = 'module'
-    s.src = 'https://w.behold.so/widget.js'
-    document.head.append(s)
+    const t = setInterval(() => setActive((a) => (a + 1) % SLIDES.length), 6000)
+    return () => clearInterval(t)
   }, [])
 
-  useEffect(() => {
-    const el = document.getElementById('connect')
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting && window.location.hash === '#connect') {
-          navigate('/', { replace: true })
-        }
-      },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [navigate])
-
-
-  const [filter, setFilter] = useState('all')
-  const [videoVisible, setVideoVisible] = useState(true)
-  const videoRef = useRef<HTMLVideoElement>(null)
-
-  const handleVideoEnd = () => {
-    setVideoVisible(false)
-    setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0
-        videoRef.current.play()
-      }
-      setVideoVisible(true)
-    }, 1500)
-  }
-  const [nlSubmitted, setNlSubmitted] = useState(false)
-  const [nlEmail, setNlEmail] = useState('')
-
-  const [approvedMessages, setApprovedMessages] = useState<SupabaseMessage[]>([])
-  const [loadingMessages, setLoadingMessages] = useState(true)
-  const [boardName, setBoardName] = useState('')
-  const [boardMessage, setBoardMessage] = useState('')
-  const [boardFile, setBoardFile] = useState<File | null>(null)
-  const [boardImagePreview, setBoardImagePreview] = useState('')
-  const [boardSubmitted, setBoardSubmitted] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState('')
-  const boardFileRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    supabase
-      .from('community_messages')
-      .select('id, name, message, photo_url, submitted_at')
-      .eq('status', 'approved')
-      .order('submitted_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setApprovedMessages(data)
-        setLoadingMessages(false)
-      })
-  }, [])
-
-  const filteredEvents = allEvents
-    .filter(e => filter === 'all' || e.category === filter)
-    .sort((a, b) => a.date.localeCompare(b.date))
-
-  function handleNL(e: FormEvent) {
-    e.preventDefault()
-    setNlSubmitted(true)
-    setNlEmail('')
-  }
-
-  function handleBoardImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setBoardFile(file)
-    setBoardImagePreview(URL.createObjectURL(file))
-  }
-
-  function clearImage() {
-    setBoardFile(null)
-    setBoardImagePreview('')
-    if (boardFileRef.current) boardFileRef.current.value = ''
-  }
-
-  async function handleBoardSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (submitting) return
-    setSubmitting(true)
-    setSubmitError('')
-
-    let photo_url: string | null = null
-
-    if (boardFile) {
-      const ext = boardFile.name.split('.').pop()?.toLowerCase()
-      const allowed = ['jpg', 'jpeg', 'png', 'webp']
-      if (!ext || !allowed.includes(ext)) {
-        setSubmitError('Only JPG, PNG, and WebP images are allowed.')
-        setSubmitting(false)
-        return
-      }
-      if (boardFile.size > 8 * 1024 * 1024) {
-        setSubmitError('Image must be under 8 MB.')
-        setSubmitting(false)
-        return
-      }
-      const filename = `${crypto.randomUUID()}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('community-photos')
-        .upload(filename, boardFile)
-      if (uploadError) {
-        setSubmitError('Image upload failed. Please try again.')
-        setSubmitting(false)
-        return
-      }
-      photo_url = supabase.storage.from('community-photos').getPublicUrl(filename).data.publicUrl
-    }
-
-    const { error } = await supabase.from('community_messages').insert({
-      name: boardName.trim() || 'Anonymous',
-      message: boardMessage.trim(),
-      photo_url,
-    })
-
-    setSubmitting(false)
-    if (error) {
-      setSubmitError('Something went wrong. Please try again.')
-      return
-    }
-
-    setBoardSubmitted(true)
-    setBoardName('')
-    setBoardMessage('')
-    clearImage()
-  }
+  const upcoming = TOURNAMENTS.slice(0, 4)
 
   return (
-    <>
-      <Nav />
-
+    <Layout>
       {/* HERO */}
-      <section id="hero">
-        <video
-          ref={videoRef}
-          src="/images/forge_hero.mp4"
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleVideoEnd}
-          style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition: 'center 70%',
-            opacity: videoVisible ? 1 : 0,
-            transition: 'opacity 1.5s ease',
-          }}
-        />
-        <div className="hero-overlay" />
-        <div className="hero-content">
-          <img
-            src={img('logo.webp')}
-            alt="The Forge"
-            className="hero-logo-img"
-            style={{ height: 'clamp(260px,40vw,480px)', width: 'auto', display: 'block', marginLeft: '-4rem', marginBottom: '0.5rem' }}
-          />
-          <p className="hero-tagline"><em>Elevated. Unapologetic. Unforgettable.</em></p>
-          <div className="hero-actions">
-            <a href="#floors" className="btn btn--ghost">Explore the Building</a>
-            <a href="#events" className="btn btn--cherry" style={{ background: 'var(--cherry)', color: '#fff' }}>See What's On</a>
-          </div>
-          <span className="hero-address">
-            285 Liberty St. N.E. &nbsp;·&nbsp; Downtown Salem, Oregon
-          </span>
-        </div>
-      </section>
-
-      {/* FLOOR SHOWCASE */}
-      <section className="section section--deep" id="floors" style={{ borderBottom: '4px solid var(--cherry)', paddingTop: '3rem', overflow: 'hidden' }}>
-        <div className="section-header">
-          <div>
-            <span className="section-label section-label--light">The Building</span>
-            <h2 className="section-title section-title--light">Four Floors.<br />One Address.</h2>
-          </div>
-          <Link to="/faq" className="btn btn--ghost floors-btn">Hours &amp; Info</Link>
-        </div>
-        <div className="floors-grid">
-          <Link to="/ground-floor" className="floor-card">
-            <img src={img('ground-floor.webp')} alt="Ground Floor" />
-            <div className="floor-card-body">
-              <span className="floor-level">Ground Floor</span>
-              <div className="floor-name">Dining &amp;<br />The Heart</div>
-              <div className="floor-tenants">Bonzai! · Jade Dumpling & Noodle House · Dreamies Creamery<br />Retail · Boutiques · Services</div>
-              <span className="floor-explore">Explore</span>
+      <section className="hero">
+        <div className="hero-stage">
+          {SLIDES.map((s, i) => (
+            <div key={i} className={`hero-slide ${s.bg} ${i === active ? 'is-active' : ''}`} aria-hidden={i !== active}>
+              <div className="hero-pattern" />
             </div>
-          </Link>
-          <Link to="/womens-collective" className="floor-card">
-            <img src={img('womens-collective.webp')} alt="Women's Collective" />
-            <div className="floor-card-body">
-              <span className="floor-level">Second Floor</span>
-              <div className="floor-name">Women's<br />Collective</div>
-              <div className="floor-tenants">Clink! · 20+ suites<br />Hair · Wellness · Aesthetics</div>
-              <span className="floor-explore">Explore</span>
-            </div>
-          </Link>
-          <Link to="/cellar-54" className="floor-card">
-            <img src={img('cellar54.webp')} alt="Cellar 54 — Lower Level" />
-            <div className="floor-card-body">
-              <span className="floor-level">Lower Level</span>
-              <div className="floor-name">Cellar 54</div>
-              <div className="floor-tenants">Private event venue<br />Intimate dinners · Milestone celebrations</div>
-              <span className="floor-explore">Explore</span>
-            </div>
-          </Link>
-          <Link to="/anthem" className="floor-card">
-            <img src={img('anthem.webp')} alt="Anthem — Third Floor" />
-            <div className="floor-card-body">
-              <span className="floor-level">Third Floor</span>
-              <div className="floor-name">Anthem</div>
-              <div className="floor-tenants">Financial strategy &amp; advisory<br />Anthem Strategists</div>
-              <span className="floor-explore">Explore</span>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* EVENTS */}
-      <section className="section section--paper" id="events" style={{ paddingTop: '3rem' }}>
-        <div className="events-header">
-          <div>
-            <span className="section-label">What's Happening</span>
-            <h2 className="section-title">The Calendar</h2>
-          </div>
-          <div style={{ fontFamily: 'var(--display)', fontSize: '1rem', fontWeight: 400, letterSpacing: '0.06em', color: 'var(--ink)' }}>
-            Upcoming Events
-          </div>
-        </div>
-        <div className="filter-bar" role="group" aria-label="Filter events">
-          {(['all','dining','events','wellness'] as const).map(f => (
-            <button
-              key={f}
-              className={`filter-btn${filter === f ? ' active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
           ))}
+          <div className="hero-field">
+            <div className="hero-content">
+              <span className="hero-badge">{SLIDES[active].badge}</span>
+              <h1 className="hero-title">{SLIDES[active].title}</h1>
+              <p className="hero-sub">{SLIDES[active].sub}</p>
+              <div className="hero-actions">
+                {SLIDES[active].actions.map((a) => (
+                  <Link key={a.label} to={a.to} className={`btn ${a.cls}`}>{a.label}</Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="hero-dots">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                className={`hero-dot ${i === active ? 'is-active' : ''}`}
+                aria-label={`Go to slide ${i + 1}`}
+                onClick={() => setActive(i)}
+              />
+            ))}
+          </div>
         </div>
-        {filteredEvents.length === 0 ? (
-          <div className="no-events">
-            Nothing scheduled yet — check back soon, or{' '}
-            <a href="mailto:inquiries@forgesalem.com" style={{ color: 'var(--cherry)' }}>reach out</a> to host your own.
-          </div>
-        ) : (
-          <div className="events-list">
-            {filteredEvents.map((ev, i) => {
-              const [yr, mo, dy] = ev.date.split('-').map(Number)
-              return (
-                <div className="event-card" key={i}>
-                  <div className="event-date-tag">
-                    <span className="event-day">{String(dy).padStart(2, '0')}</span>
-                    <span className="event-month-year">{MONTHS[mo - 1]}<br />{yr}</span>
-                  </div>
-                  <span className={`event-cat ${ev.category}`}>{ev.category}</span>
-                  <h3 className="event-title">{ev.title}</h3>
-                  <p className="event-venue">{ev.venue}</p>
-                  <p className="event-desc">{ev.desc}</p>
-                </div>
-              )
-            })}
-          </div>
-        )}
       </section>
 
-      {/* COMMUNITY BOARD */}
-      <section className="section section--paper" id="community" style={{ paddingTop: '3rem', background: 'var(--cream)' }}>
-        <div className="events-header">
-          <div>
-            <span className="section-label">From Our Community</span>
-            <h2 className="section-title">Community Board</h2>
+      {/* FEATURE CARDS */}
+      <div className="feature-strip">
+        {FEATURE_CARDS.map((c) => (
+          <div className="feature-card" key={c.title}>
+            <span className="eyebrow">{c.eyebrow}</span>
+            <h3>{c.title}</h3>
+            <p>{c.body}</p>
+            <Link to={c.to} className="card-link">{c.cta} →</Link>
           </div>
-          <p style={{ fontFamily: 'var(--display)', fontSize: '1rem', fontWeight: 400, letterSpacing: '0.06em', color: 'var(--ink)' }}>
-            Share your experience
-          </p>
-        </div>
+        ))}
+      </div>
 
-        {/* Approved messages grid */}
-        {loadingMessages && (
-          <p style={{ fontSize: '0.78rem', color: 'rgba(183,192,200,0.5)', marginBottom: '1.5rem' }}>Loading messages…</p>
-        )}
-        {!loadingMessages && approvedMessages.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
-            {approvedMessages.map(msg => (
-              <div key={msg.id} style={{ background: '#fff', border: '1px solid #e8e2d9', borderRadius: '6px', overflow: 'hidden' }}>
-                {msg.photo_url && (
-                  <img src={msg.photo_url} alt="" style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block' }} />
-                )}
-                <div style={{ padding: '1.25rem' }}>
-                  <p style={{
-                    fontFamily: 'var(--display)', fontSize: 'clamp(0.95rem, 2.5vw, 1.05rem)',
-                    fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '0.75rem',
-                  }}>
-                    "{msg.message}"
-                  </p>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--muted)', letterSpacing: '0.06em' }}>— {msg.name}</span>
-                </div>
+      {/* STATS */}
+      <section className="section section--navy">
+        <div className="shell">
+          <div className="stats">
+            {STATS.map((s) => (
+              <div key={s.label}>
+                <div className="stat-num">{s.num}</div>
+                <div className="stat-label">{s.label}</div>
               </div>
             ))}
           </div>
-        )}
-
-        {/* Submission form */}
-        <div style={{ background: 'var(--void)', borderRadius: '6px', padding: '2rem 2.25rem', maxWidth: '560px' }}>
-          <h3 style={{ fontFamily: 'var(--display)', fontSize: '1.4rem', fontWeight: 300, color: '#f3eedf', marginBottom: '0.4rem' }}>
-            Leave a Note
-          </h3>
-          <p style={{ fontSize: '0.75rem', color: 'rgba(183,192,200,0.55)', marginBottom: '1.5rem', fontWeight: 300 }}>
-            Your message will appear here after review.
-          </p>
-
-          {boardSubmitted ? (
-            <p style={{ fontSize: '0.85rem', color: '#5aac7a', fontWeight: 400, letterSpacing: '0.04em' }}>
-              ✓ Thanks! Your note is pending review.
-            </p>
-          ) : (
-            <form onSubmit={handleBoardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <input
-                type="text"
-                placeholder="Your name (optional)"
-                value={boardName}
-                onChange={e => setBoardName(e.target.value)}
-                maxLength={120}
-                style={{
-                  background: '#1f2e3c', border: '1px solid #2a3540', borderRadius: '3px',
-                  color: '#f3eedf', fontSize: '0.82rem', padding: '0.65rem 0.9rem',
-                  outline: 'none', fontFamily: 'Inter, system-ui, sans-serif',
-                }}
-              />
-              <textarea
-                placeholder="Share your experience at The Forge…"
-                required
-                value={boardMessage}
-                onChange={e => setBoardMessage(e.target.value)}
-                maxLength={2000}
-                rows={3}
-                style={{
-                  background: '#1f2e3c', border: '1px solid #2a3540', borderRadius: '3px',
-                  color: '#f3eedf', fontSize: '0.82rem', padding: '0.65rem 0.9rem',
-                  outline: 'none', fontFamily: 'Inter, system-ui, sans-serif',
-                  resize: 'vertical', lineHeight: 1.6,
-                }}
-              />
-
-              {/* Image upload */}
-              <div>
-                <input
-                  ref={boardFileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleBoardImage}
-                  style={{ display: 'none' }}
-                  id="board-image-upload"
-                />
-                <label
-                  htmlFor="board-image-upload"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                    background: 'none', border: '1px solid #2a3540', borderRadius: '3px',
-                    color: boardFile ? '#5aac7a' : '#7a8a95',
-                    fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase',
-                    padding: '0.55rem 1rem', cursor: 'pointer',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                  }}
-                >
-                  {boardFile ? '✓ Image attached' : '+ Attach image'}
-                </label>
-                {boardFile && (
-                  <button
-                    type="button"
-                    onClick={clearImage}
-                    style={{
-                      background: 'none', border: 'none', color: '#7a8a95',
-                      fontSize: '0.65rem', cursor: 'pointer', marginLeft: '0.75rem',
-                      fontFamily: 'Inter, system-ui, sans-serif',
-                    }}
-                  >
-                    Remove
-                  </button>
-                )}
-                {boardImagePreview && (
-                  <div style={{ marginTop: '0.65rem' }}>
-                    <img src={boardImagePreview} alt="Preview" style={{ height: '80px', width: 'auto', borderRadius: '3px', objectFit: 'cover' }} />
-                  </div>
-                )}
-              </div>
-
-              {submitError && (
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#e10600' }}>{submitError}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{
-                  alignSelf: 'flex-start', background: 'var(--cherry)', color: '#fff',
-                  border: 'none', borderRadius: '3px', padding: '0.65rem 1.6rem',
-                  fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 600,
-                  opacity: submitting ? 0.7 : 1,
-                }}
-              >
-                {submitting ? 'Submitting…' : 'Submit'}
-              </button>
-            </form>
-          )}
         </div>
       </section>
 
-      {/* SOCIAL */}
-      <section className="section section--deep" id="social" style={{ paddingTop: '3rem' }}>
-        <div className="social-header">
-          <div>
-            <span className="section-label">On Instagram</span>
-            <h2 className="section-title">@theforgesalem</h2>
-            <p style={{ fontSize: '0.82rem', fontWeight: 300, color: 'var(--muted)', marginTop: '0.5rem' }}>
-              Follow along — we're building something good.
+      {/* ABOUT SPLIT */}
+      <section className="section section--alt">
+        <div className="shell split">
+          <div className="prose">
+            <span className="eyebrow">The Complex</span>
+            <h2>177 acres of play on Turner Road</h2>
+            <p>
+              The Turner Road Sports Complex is {SITE.city}’s premier destination for
+              recreation and competition. Operated by {SITE.org}, the {SITE.acres}-acre
+              campus brings together championship-caliber fields, indoor courts, and family
+              amenities under one address.
             </p>
-          </div>
-          <a href="https://www.instagram.com/theforgesalem/" target="_blank" rel="noopener" className="btn btn--ghost">
-            Follow on Instagram
-          </a>
-        </div>
-        <behold-widget feed-id="3FmCp50v68XOSprBY5YE" />
-        <div className="social-foot">
-          <span className="social-tag">#TheForge &nbsp;#ForgeSalem &nbsp;#Clink</span>
-          <a href="https://www.instagram.com/theforgesalem/" target="_blank" rel="noopener" className="btn btn--ghost" style={{ fontSize: '0.58rem', padding: '0.52rem 1rem' }}>
-            View All →
-          </a>
-        </div>
-      </section>
-
-      {/* CONNECT */}
-      <section id="connect" className="connect-grid">
-        <div style={{ background: 'var(--paper)', padding: '4rem var(--section-h)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <span style={{ fontSize: '0.57rem', fontWeight: 600, letterSpacing: '0.26em', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '1rem' }}>Find Us</span>
-          <h2 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(1.8rem,2.5vw,2.6rem)', fontWeight: 300, lineHeight: 1.1, marginBottom: '1.6rem' }}>Come See<br />For Yourself</h2>
-          <div className="connect-info-grid">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div>
-                <span style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '0.3rem' }}>Address</span>
-                <p style={{ fontSize: '0.87rem', fontWeight: 300, lineHeight: 1.8 }}>285 Liberty St. N.E.<br />Downtown Salem, Oregon 97301</p>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '0.3rem' }}>Hours</span>
-                <p style={{ fontSize: '0.87rem', fontWeight: 300, lineHeight: 2 }}>
-                  Monday: 8:00 AM – 9:00 PM<br />
-                  Tuesday: 8:00 AM – 7:00 PM<br />
-                  Wednesday: 8:00 AM – 9:00 PM<br />
-                  Thursday: 8:00 AM – 9:00 PM<br />
-                  Friday: 8:00 AM – 10:00 PM<br />
-                  Saturday: 8:00 AM – 10:00 PM<br />
-                  Sunday: 8:00 AM – 9:00 PM
-                </p>
-              </div>
+            <p>
+              Whether you’re joining a weeknight adult league, signing your kids up for their
+              first season, or bringing a travel team to a regional tournament, there’s a place
+              for you on Turner Road.
+            </p>
+            <div className="hero-actions" style={{ marginTop: '1.5rem' }}>
+              <Link to="/about" className="btn btn--turf">About the Complex</Link>
+              <Link to="/fields" className="btn btn--outline">Fields &amp; Rentals</Link>
             </div>
-            <iframe
-              title="The Forge — 285 Liberty St NE, Salem OR"
-              src="https://maps.google.com/maps?q=285+Liberty+St+NE+Salem+OR+97301&t=&z=16&ie=UTF8&iwloc=&output=embed"
-              className="connect-map"
-              width="100%"
-              height="280"
-              style={{ border: 'none', display: 'block', filter: 'grayscale(20%)' }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
           </div>
-          <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
-            <a href="https://maps.google.com/?q=285+Liberty+St+NE+Salem+OR" target="_blank" rel="noopener" className="btn">Get Directions</a>
-            <a href="mailto:inquiries@forgesalem.com" className="btn btn--cherry" style={{ background: 'var(--cherry)', color: '#fff' }}>Say Hello</a>
+          <div className="split-visual bg-grad-1">
+            <span className="pin">📍 {SITE.address.line1}, {SITE.city}</span>
           </div>
-        </div>
-
-        <div className="newsletter-box" style={{ background: 'var(--void)', padding: '3.5rem 3rem 3.5rem 4rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1.4rem', alignSelf: 'center', margin: '2.5rem 2.5rem 2.5rem 2.5rem' }}>
-          <div>
-            <span style={{ fontSize: '0.54rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(183,192,200,0.45)', display: 'block', marginBottom: '0.6rem' }}>Newsletter</span>
-            <h2 style={{ fontFamily: 'var(--display)', fontSize: '1.8rem', fontWeight: 300, color: '#faf5f1', lineHeight: 1.2, marginBottom: '0.5rem' }}>Stay in the Know</h2>
-            <p style={{ fontSize: '0.82rem', fontWeight: 300, color: 'rgba(183,192,200,0.5)', lineHeight: 1.65 }}>Events and invites, first to your inbox.</p>
-          </div>
-          <form className="nl-form" onSubmit={handleNL} style={{ display: 'flex', gap: 0, maxWidth: '320px' }}>
-            <input
-              className="nl-input"
-              type="email"
-              placeholder="your@email.com"
-              required
-              value={nlEmail}
-              onChange={e => setNlEmail(e.target.value)}
-              disabled={nlSubmitted}
-              style={{ flex: 1, fontSize: '0.78rem', padding: '0.6rem 0.9rem' }}
-            />
-            <button
-              className="nl-submit"
-              type="submit"
-              disabled={nlSubmitted}
-              style={{
-                fontSize: '0.62rem', padding: '0.6rem 1.1rem', letterSpacing: '0.08em',
-                ...(nlSubmitted ? { background: 'var(--void)', borderColor: 'var(--void)' } : {})
-              }}
-            >
-              {nlSubmitted ? "You're in ✓" : 'Go'}
-            </button>
-          </form>
         </div>
       </section>
 
-      <Footer />
-    </>
+      {/* LEAGUES */}
+      <section className="section">
+        <div className="shell">
+          <div className="sec-head">
+            <span className="eyebrow">Get in the game</span>
+            <h2 className="sec-title">Adult Leagues</h2>
+            <p className="sec-sub">Competitive and recreational divisions running all year. Register solo or bring a full roster.</p>
+          </div>
+          <div className="sport-grid">
+            {ADULT_LEAGUES.slice(0, 6).map((s) => (
+              <div className="sport-card" key={s.id}>
+                <div className="sport-icon">{s.icon}</div>
+                <h3>{s.name}</h3>
+                <div className="sport-meta">
+                  <span className="tag tag--season">{s.season}</span>
+                  {s.ages && <span className="tag tag--age">{s.ages}</span>}
+                </div>
+                <p>{s.blurb}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Link to="/adult-leagues" className="btn btn--outline">All Adult Leagues</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* YOUTH */}
+      <section className="section section--alt">
+        <div className="shell">
+          <div className="sec-head">
+            <span className="eyebrow">For the next generation</span>
+            <h2 className="sec-title">Youth Sports</h2>
+            <p className="sec-sub">Skill-building, sportsmanship, and a whole lot of fun for ages 3 to 14.</p>
+          </div>
+          <div className="sport-grid">
+            {YOUTH_SPORTS.map((s) => (
+              <div className="sport-card" key={s.id}>
+                <div className="sport-icon">{s.icon}</div>
+                <h3>{s.name}</h3>
+                <div className="sport-meta">
+                  <span className="tag tag--season">{s.season}</span>
+                  {s.ages && <span className="tag tag--age">{s.ages}</span>}
+                </div>
+                <p>{s.blurb}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Link to="/youth-sports" className="btn btn--outline">All Youth Sports</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* UPCOMING TOURNAMENTS */}
+      <section className="section">
+        <div className="shell">
+          <div className="sec-head">
+            <span className="eyebrow">Mark your calendar</span>
+            <h2 className="sec-title">Upcoming Tournaments</h2>
+            <p className="sec-sub">A sample of the regional events coming to the complex this season.</p>
+          </div>
+          <table className="tourn-table">
+            <thead>
+              <tr><th>Event</th><th>Sport</th><th>Dates</th></tr>
+            </thead>
+            <tbody>
+              {upcoming.map((t) => (
+                <tr key={t.name}>
+                  <td><span className="tourn-name">{t.name}</span></td>
+                  <td><span className={`sport-pill ${t.sport}`}>{t.sport}</span></td>
+                  <td>{t.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Link to="/tournaments" className="btn btn--primary">Full Tournament Schedule</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* SPONSORS */}
+      <section className="section section--alt">
+        <div className="shell">
+          <div className="sec-head">
+            <span className="eyebrow">Powered by our community</span>
+            <h2 className="sec-title">Our Sponsors</h2>
+            <p className="sec-sub">Local partners who help keep Salem playing. Interested in joining them?{' '}
+              <Link to="/contact" style={{ color: 'var(--orange)', fontWeight: 600 }}>Get in touch.</Link>
+            </p>
+          </div>
+          <div className="sponsor-grid">
+            {SPONSORS.map((s) => (
+              <div className="sponsor-cell" key={s}>{s}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <NewsletterStrip />
+    </Layout>
   )
 }

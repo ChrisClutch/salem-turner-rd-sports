@@ -1,91 +1,100 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { img } from '../utils/img'
-
-// Module-level — survives Nav unmount/remount when navigating between pages
-let _logoClickCount = 0
-let _logoClickTimer: ReturnType<typeof setTimeout> | null = null
+import { Link, useLocation } from 'react-router-dom'
+import { NAV, SITE } from '../data/site'
+import Logo from './Logo'
 
 export default function Nav() {
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
   const location = useLocation()
-  const navigate = useNavigate()
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    setMobileOpen(false)
+    setOpenGroup(null)
+  }, [location.pathname, location.hash])
 
-  useEffect(() => { setMenuOpen(false) }, [location.pathname])
-
-  const isActive = (path: string) => location.pathname === path ? 'active' : ''
-
-  function handleLogoClick(e: React.MouseEvent) {
-    e.preventDefault()
-    _logoClickCount += 1
-
-    if (_logoClickTimer) clearTimeout(_logoClickTimer)
-
-    if (_logoClickCount >= 3) {
-      _logoClickCount = 0
-      sessionStorage.setItem('forge_gate', Date.now().toString())
-      navigate('/admin')
-      return
-    }
-
-    if (location.pathname !== '/') navigate('/')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-
-    _logoClickTimer = setTimeout(() => {
-      _logoClickCount = 0
-    }, 800)
+  const isActive = (to: string) => {
+    const base = to.split('#')[0]
+    return base !== '/' && location.pathname.startsWith(base)
   }
 
   return (
-    <nav id="mainNav" className={scrolled ? 'scrolled' : ''}>
-      <ul className="nav-links nav-links--left">
-        <li><Link to="/anthem" className={isActive('/anthem')}>Wealth &amp; Finance</Link></li>
-        <li><Link to="/womens-collective" className={isActive('/womens-collective')}>Women's Collective</Link></li>
-        <li><Link to="/ground-floor" className={isActive('/ground-floor')}>Ground Floor</Link></li>
-        <li><Link to="/cellar-54" className={isActive('/cellar-54')}>Lower Level</Link></li>
-      </ul>
-      <Link to="/" className="forge-logo forge-logo--nav" aria-label="The Forge" onClick={handleLogoClick}>
-        <img src={img('logo2.webp')} alt="The Forge" style={{ height: '70px', width: 'auto', display: 'block' }} />
-      </Link>
-      <div className="nav-right">
-        <ul className="nav-links nav-links--right">
-          <li><Link to="/#events">Events</Link></li>
-          <li><Link to="/faq" className={isActive('/faq')}>FAQ</Link></li>
-          <li><Link to="/leasing" className={isActive('/leasing')}>Leasing</Link></li>
-          <li><Link to="/directory" className={isActive('/directory')}>Directory</Link></li>
-        </ul>
-        <div className="nav-cta">
-          <Link to="/#connect" className="btn btn--nav">Say Hello</Link>
+    <header className="sitehead">
+      <div className="topbar">
+        <span>{SITE.address.line1} · {SITE.address.line2}</span>
+        <div className="topbar-links">
+          <a href={`tel:${SITE.phone.replace(/[^\d]/g, '')}`}>{SITE.phone}</a>
+          <Link to="/contact">Contact</Link>
+          <Link to="/schedules">Game Schedules</Link>
         </div>
-        <button className="nav-hamburger" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
-          <span /><span /><span />
-        </button>
       </div>
 
-      {menuOpen && (
-        <div className="nav-mobile-overlay">
-          <button className="nav-mobile-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>✕</button>
-          <div className="nav-mobile-links">
-            <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
-            <Link to="/ground-floor" onClick={() => setMenuOpen(false)}>Ground Floor</Link>
-            <Link to="/womens-collective" onClick={() => setMenuOpen(false)}>Women's Collective</Link>
-            <Link to="/cellar-54" onClick={() => setMenuOpen(false)}>Lower Level</Link>
-            <Link to="/anthem" onClick={() => setMenuOpen(false)}>Wealth &amp; Finance</Link>
-            <Link to="/#events" onClick={() => setMenuOpen(false)}>Events</Link>
-            <Link to="/faq" onClick={() => setMenuOpen(false)}>FAQ</Link>
-            <Link to="/leasing" onClick={() => setMenuOpen(false)}>Leasing</Link>
-            <Link to="/directory" onClick={() => setMenuOpen(false)}>Directory</Link>
-            <Link to="/#connect" className="btn btn--cherry" style={{ background: 'var(--cherry)', color: '#fff', marginTop: '0.5rem', fontSize: '0.72rem' }} onClick={() => setMenuOpen(false)}>Say Hello</Link>
-          </div>
+      <nav className="navbar" aria-label="Primary">
+        <div className="navbar-inner">
+          <Link to="/" className="brand" aria-label={`${SITE.name} home`}>
+            <Logo className="brand-mark" />
+            <span className="brand-text">
+              <span className="brand-org">{SITE.org}</span>
+              <span className="brand-name">{SITE.name}</span>
+            </span>
+          </Link>
+
+          <ul className="navlinks">
+            {NAV.map((item) => (
+              <li key={item.label}>
+                <Link to={item.to} className={`navlink ${isActive(item.to) || location.pathname === item.to ? 'active' : ''}`}>
+                  {item.label}
+                  {item.children && <span className="caret">▾</span>}
+                </Link>
+                {item.children && (
+                  <div className="dropdown">
+                    {item.children.map((c) => (
+                      <Link key={c.label} to={c.to}>{c.label}</Link>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            className="nav-toggle"
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
+          >
+            <span /><span /><span />
+          </button>
         </div>
-      )}
-    </nav>
+      </nav>
+
+      <div className={`mobile-nav ${mobileOpen ? '' : 'closed'}`}>
+        {NAV.map((item) => (
+          <div className="m-item" key={item.label}>
+            {item.children ? (
+              <>
+                <button
+                  className="m-link"
+                  style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                  onClick={() => setOpenGroup((g) => (g === item.label ? null : item.label))}
+                >
+                  {item.label} <span style={{ float: 'right' }}>{openGroup === item.label ? '−' : '+'}</span>
+                </button>
+                {openGroup === item.label && (
+                  <div className="m-sub">
+                    <Link to={item.to}>All {item.label}</Link>
+                    {item.children.map((c) => (
+                      <Link key={c.label} to={c.to}>{c.label}</Link>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <Link className="m-link" to={item.to}>{item.label}</Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </header>
   )
 }
