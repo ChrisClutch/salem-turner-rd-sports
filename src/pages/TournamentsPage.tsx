@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import PageHero from '../components/PageHero'
 import NewsletterStrip from '../components/NewsletterStrip'
 import { TOURNAMENTS, Tournament } from '../data/site'
+import { IMAGES, coverBg } from '../data/images'
 
 function TournTable({ rows }: { rows: Tournament[] }) {
   return (
@@ -55,7 +56,7 @@ export default function TournamentsPage() {
             </ul>
             <Link to="/contact" className="btn btn--primary">Register a Team</Link>
           </div>
-          <div className="split-visual bg-grad-3">
+          <div className="split-visual" style={coverBg(IMAGES.fieldhouse)}>
             <span className="pin">🏆 Teams from across the NW</span>
           </div>
         </div>

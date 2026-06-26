@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import NewsletterStrip from '../components/NewsletterStrip'
 import { SITE, FEATURE_CARDS, STATS, ADULT_LEAGUES, YOUTH_SPORTS, TOURNAMENTS, SPONSORS } from '../data/site'
+import { IMAGES, coverBg } from '../data/images'
 
 const SLIDES = [
   {
     bg: 'bg-grad-1',
+    img: IMAGES.heroBaseball,
     badge: '177 Acres on Turner Road',
     title: <>Salem’s home for <em>sports</em></>,
     sub: 'Twelve championship diamonds, lighted turf fields, and an indoor fieldhouse — all in one place on Turner Road SE.',
@@ -17,6 +19,7 @@ const SLIDES = [
   },
   {
     bg: 'bg-grad-2',
+    img: IMAGES.heroCourt,
     badge: 'Leagues for every age',
     title: <>Play your <em>season</em></>,
     sub: 'Adult and youth leagues year-round — baseball, softball, soccer, basketball, volleyball, and pickleball.',
@@ -27,6 +30,7 @@ const SLIDES = [
   },
   {
     bg: 'bg-grad-3',
+    img: IMAGES.heroSoccer,
     badge: '2026 Tournament Season',
     title: <>Bring your <em>team</em> to Salem</>,
     sub: 'Regional baseball, fastpitch, and volleyball tournaments draw teams and families from across the Northwest.',
@@ -54,7 +58,8 @@ export default function HomePage() {
         <div className="hero-stage">
           {SLIDES.map((s, i) => (
             <div key={i} className={`hero-slide ${s.bg} ${i === active ? 'is-active' : ''}`} aria-hidden={i !== active}>
-              <div className="hero-pattern" />
+              <div className="hero-photo" style={coverBg(s.img)} />
+              <div className="hero-shade" />
             </div>
           ))}
           <div className="hero-field">
@@ -130,7 +135,7 @@ export default function HomePage() {
               <Link to="/fields" className="btn btn--outline">Fields &amp; Rentals</Link>
             </div>
           </div>
-          <div className="split-visual bg-grad-1">
+          <div className="split-visual" style={coverBg(IMAGES.complexAerial)}>
             <span className="pin">📍 {SITE.address.line1}, {SITE.city}</span>
           </div>
         </div>

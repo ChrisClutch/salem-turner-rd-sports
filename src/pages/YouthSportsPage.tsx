@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import PageHero from '../components/PageHero'
 import NewsletterStrip from '../components/NewsletterStrip'
 import { YOUTH_SPORTS } from '../data/site'
+import { IMAGES, coverBg } from '../data/images'
 
 export default function YouthSportsPage() {
   return (
@@ -52,7 +53,7 @@ export default function YouthSportsPage() {
             </ul>
             <Link to="/contact" className="btn btn--turf" style={{ marginTop: '0.5rem' }}>Volunteer to Coach</Link>
           </div>
-          <div className="split-visual bg-grad-2">
+          <div className="split-visual" style={coverBg(IMAGES.soccerPlay)}>
             <span className="pin">⭐ Tots through age 14</span>
           </div>
         </div>

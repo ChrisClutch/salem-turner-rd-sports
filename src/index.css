@@ -212,6 +212,12 @@ ul { list-style: none; }
   position: absolute; inset: 0; opacity: 0.16; z-index: 1;
   background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0 2px, transparent 2px 120px);
 }
+/* photo layer + darkening shade for legibility (gradient class shows if image fails) */
+.hero-photo { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; }
+.hero-shade {
+  position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(105deg, rgba(13,27,42,0.82) 0%, rgba(13,27,42,0.55) 48%, rgba(15,92,46,0.32) 100%);
+}
 
 /* ─── FEATURE CARDS ─── */
 .feature-strip {
@@ -261,8 +267,9 @@ ul { list-style: none; }
 
 /* ─── CTA SPLIT / ABOUT BLOCK ─── */
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
-.split-visual { border-radius: 12px; min-height: 360px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 1.5rem; color: #fff; }
-.split-visual .pin { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.85rem; background: rgba(0,0,0,0.35); padding: 0.4rem 0.8rem; border-radius: 4px; }
+.split-visual { border-radius: 12px; min-height: 360px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 1.5rem; color: #fff; background-color: var(--turf-dk); background-size: cover; background-position: center; }
+.split-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(13,27,42,0.55) 0%, rgba(13,27,42,0) 45%); pointer-events: none; }
+.split-visual .pin { position: relative; z-index: 1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.85rem; background: rgba(0,0,0,0.5); padding: 0.45rem 0.85rem; border-radius: 4px; backdrop-filter: blur(2px); }
 .prose p { margin-bottom: 1rem; color: var(--slate); }
 .prose h2 { font-family: var(--display); font-weight: 700; text-transform: uppercase; font-size: clamp(1.7rem,3.5vw,2.6rem); line-height: 1.05; margin-bottom: 1rem; }
 .prose h3 { font-family: var(--display); font-weight: 700; text-transform: uppercase; font-size: 1.3rem; margin: 1.6rem 0 0.6rem; }

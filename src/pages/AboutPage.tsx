@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import PageHero from '../components/PageHero'
 import NewsletterStrip from '../components/NewsletterStrip'
 import { SITE, STATS } from '../data/site'
+import { IMAGES, coverBg } from '../data/images'
 
 const IMPACT = [
   { num: '60K+', label: 'Annual Visitors' },
@@ -38,7 +39,7 @@ export default function AboutPage() {
               Pacific Northwest.
             </p>
           </div>
-          <div className="split-visual bg-grad-2">
+          <div className="split-visual" style={coverBg(IMAGES.fieldFence)}>
             <span className="pin">🌲 {SITE.city}</span>
           </div>
         </div>

@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import PageHero from '../components/PageHero'
 import NewsletterStrip from '../components/NewsletterStrip'
 import { SITE } from '../data/site'
+import { IMAGES, coverBg } from '../data/images'
 
 const FACILITIES = [
   { icon: '⚾', name: '12 Championship Diamonds', desc: 'Lighted, fully-fenced baseball and softball fields with covered dugouts and electronic scoreboards.' },
@@ -40,7 +41,7 @@ export default function FieldsPage() {
               games in minutes, and everything from concessions to restrooms is close at hand.
             </p>
           </div>
-          <div className="split-visual bg-grad-1">
+          <div className="split-visual" style={coverBg(IMAGES.complexAerial)}>
             <span className="pin">📍 {SITE.address.line1}, {SITE.city}</span>
           </div>
         </div>
