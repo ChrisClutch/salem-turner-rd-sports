@@ -57,14 +57,18 @@ export default function HomePage() {
       <section className="hero">
         <div className="hero-stage">
           {SLIDES.map((s, i) => (
-            <div key={i} className={`hero-slide ${s.bg} ${i === active ? 'is-active' : ''}`} aria-hidden={i !== active}>
+            <div key={i} className={`hero-slide ${i === active ? 'is-active' : ''}`} aria-hidden={i !== active}>
+              <div className="hero-fallback" />
               <div className="hero-photo" style={coverBg(s.img)} />
               <div className="hero-shade" />
             </div>
           ))}
           <div className="hero-field">
             <div className="hero-content">
-              <span className="hero-badge">{SLIDES[active].badge}</span>
+              <div className="hero-kicker">
+                <span className="rule" />
+                {String(active + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')} — {SLIDES[active].badge}
+              </div>
               <h1 className="hero-title">{SLIDES[active].title}</h1>
               <p className="hero-sub">{SLIDES[active].sub}</p>
               <div className="hero-actions">
@@ -74,29 +78,39 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className="hero-dots">
-            {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                className={`hero-dot ${i === active ? 'is-active' : ''}`}
-                aria-label={`Go to slide ${i + 1}`}
-                onClick={() => setActive(i)}
-              />
-            ))}
+
+          <div className="hero-ribbon">
+            <div className="hero-facts">
+              <div><span className="k">Location</span><span className="v">Turner Rd SE</span></div>
+              <div><span className="k">Footprint</span><span className="v">{SITE.acres} Acres</span></div>
+              <div><span className="k">Operated By</span><span className="v">Salem Parks &amp; Rec</span></div>
+            </div>
+            <div className="hero-ind">
+              {SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  className={i === active ? 'is-active' : ''}
+                  aria-label={`Go to slide ${i + 1}`}
+                  onClick={() => setActive(i)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURE CARDS */}
-      <div className="feature-strip">
-        {FEATURE_CARDS.map((c) => (
-          <div className="feature-card" key={c.title}>
-            <span className="eyebrow">{c.eyebrow}</span>
-            <h3>{c.title}</h3>
-            <p>{c.body}</p>
-            <Link to={c.to} className="card-link">{c.cta} →</Link>
-          </div>
-        ))}
+      {/* QUICK LINKS */}
+      <div className="quicklinks">
+        <div className="quicklinks-inner">
+          {FEATURE_CARDS.map((c) => (
+            <Link to={c.to} className="ql" key={c.title}>
+              <span className="eyebrow">{c.eyebrow}</span>
+              <h3>{c.title}</h3>
+              <p>{c.body}</p>
+              <span className="go">{c.cta} →</span>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* STATS */}
@@ -144,8 +158,8 @@ export default function HomePage() {
       {/* LEAGUES */}
       <section className="section">
         <div className="shell">
-          <div className="sec-head">
-            <span className="eyebrow">Get in the game</span>
+          <div className="sec-head left">
+            <span className="eyebrow">01 — Get in the game</span>
             <h2 className="sec-title">Adult Leagues</h2>
             <p className="sec-sub">Competitive and recreational divisions running all year. Register solo or bring a full roster.</p>
           </div>
@@ -171,8 +185,8 @@ export default function HomePage() {
       {/* YOUTH */}
       <section className="section section--alt">
         <div className="shell">
-          <div className="sec-head">
-            <span className="eyebrow">For the next generation</span>
+          <div className="sec-head left">
+            <span className="eyebrow">02 — For the next generation</span>
             <h2 className="sec-title">Youth Sports</h2>
             <p className="sec-sub">Skill-building, sportsmanship, and a whole lot of fun for ages 3 to 14.</p>
           </div>
@@ -198,8 +212,8 @@ export default function HomePage() {
       {/* UPCOMING TOURNAMENTS */}
       <section className="section">
         <div className="shell">
-          <div className="sec-head">
-            <span className="eyebrow">Mark your calendar</span>
+          <div className="sec-head left">
+            <span className="eyebrow">03 — Mark your calendar</span>
             <h2 className="sec-title">Upcoming Tournaments</h2>
             <p className="sec-sub">A sample of the regional events coming to the complex this season.</p>
           </div>
@@ -226,8 +240,8 @@ export default function HomePage() {
       {/* SPONSORS */}
       <section className="section section--alt">
         <div className="shell">
-          <div className="sec-head">
-            <span className="eyebrow">Powered by our community</span>
+          <div className="sec-head left">
+            <span className="eyebrow">04 — Powered by our community</span>
             <h2 className="sec-title">Our Sponsors</h2>
             <p className="sec-sub">Local partners who help keep Salem playing. Interested in joining them?{' '}
               <Link to="/contact" style={{ color: 'var(--orange)', fontWeight: 600 }}>Get in touch.</Link>
