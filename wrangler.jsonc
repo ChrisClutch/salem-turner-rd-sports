@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers static-assets config. `npm run build` writes to dist/,
+  // then `npx wrangler deploy` publishes it.
+  "name": "salem-turner-rd-sports",
+  "compatibility_date": "2025-10-01",
+  "assets": {
+    "directory": "./dist",
+    // Send unknown paths to index.html so React Router can handle them.
+    "not_found_handling": "single-page-application"
+  }
+}
